@@ -78,6 +78,12 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;}
 .alt-line{font-size:12px;color:var(--theme-soft);margin-top:6px;}
 .buy-btn{flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;padding:9px 14px;border-radius:8px;border:1.5px solid var(--theme-accent);color:var(--theme-accent);font-size:13px;font-weight:500;text-decoration:none;white-space:nowrap;align-self:center;}
 .disclaimer{font-size:12px;color:#888;margin-top:22px;padding-top:16px;border-top:1px solid var(--theme-pale);line-height:1.6;}
+.pairing-section{margin-top:20px;padding:16px;background:var(--theme-pale);border-radius:12px;}
+.pairing-title{font-size:13px;font-weight:700;color:var(--theme-accent);margin:0 0 12px;}
+.pair-item{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}
+.pair-item:last-child{margin-bottom:0;}
+.pair-names{font-size:14px;font-weight:700;color:var(--theme-accent);white-space:nowrap;flex-shrink:0;}
+.pair-desc{font-size:13px;color:var(--theme-soft);line-height:1.5;}
 .rx-actions{display:flex;flex-direction:column;gap:10px;margin-top:22px;}
 .rx-actions-row{display:flex;gap:10px;}
 .action-btn{padding:13px;border-radius:10px;font-size:14px;text-align:center;width:100%;}
@@ -240,6 +246,40 @@ var PRODUCTS = [
    desc:"두릅순의 쌉쌀한 맛과 항산화 성분도 면역 관리에 좋아요.",
    recipe:"두릅 초고추장 무침 또는 두릅 튀김"}
 ];
+
+/* ===================== 나물 궁합 데이터 ===================== */
+/* 키: "나물A|나물B" (가나다 순 고정), 값: 시너지 설명 */
+var PAIRS = {
+  "당귀잎|쑥":     "철분 + 혈행 조합. 여성 건강에 특히 좋은 황금 궁합이에요.",
+  "갯방풍|쑥":     "철분 + 항산화 조합. 피로 회복과 면역 강화를 동시에 챙겨요.",
+  "미나리|쑥":     "철분 + 칼륨 조합. 빈혈 예방과 혈액 순환에 시너지가 나요.",
+  "참나물|쑥":     "철분 + 칼슘 조합. 피로 회복과 뼈 건강을 함께 케어해요.",
+  "갯방풍|참나물": "비타민A + 항산화 조합. 눈 건강과 면역력을 함께 높여요.",
+  "케일|참나물":   "비타민A 더블 조합. 눈 건강 집중 케어에 최고의 짝꿍이에요.",
+  "고구마순|고사리":"식이섬유 더블 조합. 장 건강 집중 케어에 강력한 조합이에요.",
+  "시래기|고사리": "식이섬유 + 칼슘 조합. 장 건강과 뼈 건강을 동시에 잡아요.",
+  "가죽나물|고사리":"저칼로리 + 식이섬유 조합. 다이어트 중 최강의 나물 조합이에요.",
+  "비름|시래기":   "칼슘 더블 조합. 뼈와 관절 건강에 집중적으로 도움이 돼요.",
+  "오가피나물|시래기":"칼슘 + 관절 케어 조합. 관절 건강에 가장 든든한 조합이에요.",
+  "두릅|도라지":   "사포닌 + 항산화 조합. 기관지와 면역력을 함께 지켜줘요.",
+  "갯방풍|도라지": "항산화 + 사포닌 조합. 면역 강화와 기관지 케어에 시너지가 나요.",
+  "당귀잎|미나리": "칼륨 + 혈행 조합. 혈액 순환과 붓기 완화를 동시에 케어해요.",
+  "미나리|죽순":   "칼륨 더블 조합. 나트륨 배출과 붓기 해소 효과가 극대화돼요.",
+  "가죽나물|미나리":"저칼로리 + 칼륨 조합. 가볍고 건강하게 체중을 관리할 수 있어요.",
+  "갯방풍|가죽나물":"저칼로리 + 항산화 조합. 체중 관리와 면역력을 함께 챙겨요."
+};
+
+/* 추천 나물 목록에서 궁합 쌍 찾기 */
+function findPairs(names){
+  var found=[];
+  for(var i=0;i<names.length;i++){
+    for(var j=i+1;j<names.length;j++){
+      var key=[names[i],names[j]].sort().join("|");
+      if(PAIRS[key]) found.push({a:names[i],b:names[j],desc:PAIRS[key]});
+    }
+  }
+  return found;
+}
 
 var FALLBACK = ["C8","C4"];
 var RECORDS_KEY = "namulbaragi_records_v1";
@@ -431,6 +471,22 @@ function renderResult(){
     });
   }
 
+  /* 궁합 섹션 */
+  var pairs=findPairs(recommendedShortNames);
+  var pairingHTML="";
+  if(pairs.length>0){
+    var pairItems=pairs.map(function(p){
+      return '<div class="pair-item">'+
+        '<span class="pair-names">'+p.a+' × '+p.b+'</span>'+
+        '<span class="pair-desc">'+p.desc+'</span>'+
+      '</div>';
+    }).join("");
+    pairingHTML='<div class="pairing-section">'+
+      '<p class="pairing-title">🌿 나물 궁합 — 이 조합 주목!</p>'+
+      pairItems+
+    '</div>';
+  }
+
   if(!state.recorded){
     saveRecord({
       date:new Date().toISOString(),
@@ -465,6 +521,7 @@ function renderResult(){
       '<p class="rx-summary-label">주요 증상 요약</p>'+
       '<p class="rx-summary-text">'+summaryText+'</p>'+
       itemsHTML+
+      pairingHTML+
       '<p class="disclaimer">이 처방전은 일반적으로 알려진 식품 영양정보를 바탕으로 한 단순 참고용 추천이며, 의학적 진단이나 처방이 아닙니다. 정확한 건강 상태는 전문가와 상담해주세요.</p>'+
       '<div class="rx-actions">'+
         '<button class="action-btn action-primary" id="saveImgBtn">처방전 저장 (이미지로)</button>'+
