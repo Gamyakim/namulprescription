@@ -288,7 +288,7 @@ var FALLBACK=["C8","C4"];
 
 /* ===================== 저장 ===================== */
 var RECORDS_KEY="namulbaragi_records_v1";
-var ADMIN_PASSWORD="99308972";
+var ADMIN_PASSWORD="1234";
 function getRecords(){try{var r=localStorage.getItem(RECORDS_KEY);return r?JSON.parse(r):[]}catch(e){return [];}}
 function saveRecord(r){try{var a=getRecords();a.push(r);localStorage.setItem(RECORDS_KEY,JSON.stringify(a));}catch(e){}}
 function clearRecords(){try{localStorage.removeItem(RECORDS_KEY);}catch(e){}}
