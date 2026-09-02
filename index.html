@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>나물바라기 - 나물 처방전</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- 카카오 공유 SDK: developers.kakao.com 에서 JS 앱 키 발급 후 아래 KAKAO_APP_KEY 에 입력하세요 -->
+<script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" crossorigin="anonymous"></script>
+<style>
+:root{
+  --green:#1f3315; --green-mid:#2c4a1f; --green-soft:#5a7a4a;
+  --pale:#eaf3de; --border:#d8e3d0; --paper:#ffffff; --bg:#eef2ea;
+  --theme-bg:#eef2ea; --theme-accent:#2c4a1f; --theme-soft:#5a7a4a;
+  --theme-pale:#eaf3de; --theme-border:#d8e3d0;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{background:var(--bg);font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;color:#222;font-size:17px;line-height:1.65;}
+.container{max-width:480px;margin:0 auto;padding:32px 20px 40px;min-height:100vh;}
+.card{background:var(--paper);border-radius:16px;padding:26px 22px;border:1px solid var(--border);}
+button{font-family:inherit;cursor:pointer;border:none;background:none;}
+
+/* 표지 */
+.cover-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:78vh;text-align:center;gap:14px;}
+.logo-small{color:var(--green-soft);font-size:15px;letter-spacing:2px;font-weight:500;margin-bottom:2px;}
+.cover-title{color:var(--green);font-size:32px;font-weight:700;line-height:1.4;margin:0;}
+.cover-sub{color:var(--green-soft);font-size:16px;margin-top:4px;}
+.btn-start{margin-top:22px;background:var(--green-mid);color:#fff;font-weight:700;font-size:17px;padding:16px 40px;border-radius:999px;}
+.btn-start:active{transform:scale(0.98);}
+.btn-history{margin-top:10px;background:#fff;color:var(--green-mid);font-size:15px;padding:12px 30px;border-radius:999px;border:1px solid var(--border);}
+.admin-link{margin-top:32px;font-size:12px;color:var(--green-soft);opacity:.5;text-decoration:underline;}
+
+/* 문진 */
+.quiz-intro{font-size:14px;color:var(--green-soft);margin:0 0 16px;}
+.quiz-list{display:flex;flex-direction:column;gap:14px;padding-bottom:110px;}
+.q-block{background:var(--paper);border:1px solid var(--border);border-radius:14px;padding:18px;}
+.q-num{font-size:12px;color:var(--green-soft);margin:0 0 6px;font-weight:700;}
+.q-text{font-size:17px;font-weight:700;color:var(--green);margin:0 0 12px;}
+.q-options{display:flex;gap:10px;}
+.opt-btn{flex:1;text-align:center;padding:12px 8px;border-radius:10px;border:1px solid var(--border);background:#fff;font-size:15px;color:#333;}
+.opt-btn.active{background:var(--green-mid);color:#fff;border-color:var(--green-mid);font-weight:700;}
+.submit-bar{position:fixed;left:0;right:0;bottom:0;background:var(--paper);border-top:1px solid var(--border);padding:14px 20px;}
+.submit-bar-inner{max-width:440px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:14px;}
+.submit-count{font-size:13px;color:var(--green-soft);}
+.submit-btn{background:var(--green-mid);color:#fff;font-weight:700;padding:13px 26px;border-radius:999px;font-size:15px;}
+.submit-btn:disabled{background:#cfd8c8;color:#fff;cursor:not-allowed;}
+
+/* 로딩 */
+.loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;gap:18px;}
+.spinner{width:46px;height:46px;border-radius:50%;border:4px solid var(--pale);border-top-color:var(--green-mid);animation:spin .9s linear infinite;}
+@media(prefers-reduced-motion:reduce){.spinner{animation:none;}}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{color:var(--green);font-size:17px;font-weight:500;}
+
+/* 처방전 결과 */
+.rx-wrap{background:var(--theme-bg);border-radius:16px;padding:4px;transition:background .4s;}
+.rx-card{border:1.5px solid var(--theme-accent);border-radius:14px;background:#fff;padding:26px 22px;}
+.rx-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1.5px solid var(--theme-accent);padding-bottom:16px;margin-bottom:16px;}
+.rx-title{font-size:24px;font-weight:700;color:var(--theme-accent);margin:6px 0 0;}
+.rx-date{font-size:12px;color:var(--theme-soft);margin:5px 0 0;}
+.stamp{width:54px;height:54px;border-radius:50%;border:2px dashed var(--theme-accent);display:flex;align-items:center;justify-content:center;transform:rotate(-8deg);flex-shrink:0;}
+.stamp span{font-size:10px;color:var(--theme-accent);font-weight:700;text-align:center;line-height:1.25;}
+.rx-theme-badge{display:inline-block;font-size:12px;font-weight:700;color:var(--theme-accent);background:var(--theme-pale);padding:3px 10px;border-radius:999px;margin-bottom:10px;}
+.rx-summary-label{font-size:12px;color:var(--theme-soft);margin:0 0 4px;}
+.rx-summary-text{font-size:15px;color:var(--theme-accent);margin:0 0 18px;font-weight:500;}
+.item{display:flex;gap:12px;align-items:flex-start;border-top:1px solid var(--theme-pale);padding-top:16px;margin-top:16px;}
+.item:first-child{border-top:none;padding-top:0;margin-top:0;}
+.leaf-ico{flex-shrink:0;margin-top:2px;}
+.item-body{flex:1;min-width:0;}
+.item-name-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;}
+.item-name{font-size:18px;font-weight:700;color:var(--theme-accent);}
+.tag-pill{font-size:11px;color:var(--theme-accent);background:var(--theme-pale);padding:2px 8px;border-radius:999px;}
+.season-pill{font-size:11px;color:#e67e22;background:#fef5e7;padding:2px 8px;border-radius:999px;font-weight:700;}
+.item-desc{font-size:14px;color:var(--theme-soft);margin:0 0 3px;}
+.item-recipe{font-size:13px;color:#777;margin:0 0 4px;font-style:italic;}
+.bundle-note{font-size:11px;color:#9aab8f;margin:0 0 5px;}
+.alt-line{font-size:12px;color:var(--theme-soft);margin-top:6px;}
+.buy-btn{flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;padding:9px 14px;border-radius:8px;border:1.5px solid var(--theme-accent);color:var(--theme-accent);font-size:13px;font-weight:500;text-decoration:none;white-space:nowrap;align-self:center;}
+.disclaimer{font-size:12px;color:#888;margin-top:22px;padding-top:16px;border-top:1px solid var(--theme-pale);line-height:1.6;}
+.rx-actions{display:flex;flex-direction:column;gap:10px;margin-top:22px;}
+.rx-actions-row{display:flex;gap:10px;}
+.action-btn{padding:13px;border-radius:10px;font-size:14px;text-align:center;width:100%;}
+.action-primary{background:var(--theme-accent);color:#fff;font-weight:700;border:1.5px solid var(--theme-accent);}
+.action-secondary{background:#fff;color:#333;border:1px solid var(--border);}
+.action-kakao{background:#FEE500;color:#3C1E1E;font-weight:700;border:1px solid #e6cf00;}
+.capturing .rx-actions{display:none;}
+
+/* 히스토리 */
+.history-title{font-size:20px;font-weight:700;color:var(--green);margin:0 0 4px;}
+.history-sub{font-size:13px;color:var(--green-soft);margin:0 0 18px;}
+.hist-item{border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px;background:#fff;}
+.hist-date{font-size:12px;color:var(--green-soft);margin:0 0 4px;}
+.hist-cats{font-size:13px;color:var(--green);font-weight:500;margin:0 0 4px;}
+.hist-namul{font-size:14px;color:#444;margin:0;}
+.hist-empty{font-size:14px;color:var(--green-soft);text-align:center;padding:30px 0;}
+
+/* 관리자 */
+.admin-pass-input{width:100%;padding:13px 14px;border:1px solid var(--border);border-radius:10px;font-size:16px;margin-bottom:12px;}
+.admin-error{color:#b33939;font-size:13px;margin-bottom:10px;}
+.admin-cancel{display:block;margin-top:8px;font-size:13px;color:var(--green-soft);text-decoration:underline;}
+.admin-title{font-size:20px;font-weight:700;color:var(--green);margin:0 0 4px;}
+.admin-sub{font-size:13px;color:var(--green-soft);margin:0 0 18px;}
+.stat-block{margin-bottom:22px;}
+.stat-block h3{font-size:15px;color:var(--green);margin:0 0 8px;font-weight:700;}
+.stat-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--pale);font-size:15px;}
+.stat-rank{color:var(--green-soft);font-size:13px;margin-right:8px;}
+.stat-empty{font-size:14px;color:var(--green-soft);}
+.admin-actions{display:flex;gap:10px;margin-top:10px;}
+
+@media print{.rx-actions{display:none;}}
+</style>
+</head>
+<body>
+<div class="container" id="app"></div>
+<script>
+/* ===================== 상수 ===================== */
+var STORE_BASE = "https://smartstore.naver.com/namullover/products/";
+var SITE_URL   = "https://namulprescription.netlify.app/";
+var KAKAO_APP_KEY = ""; /* ← 카카오 개발자 콘솔 JS 앱 키 입력 (없으면 카카오 버튼 숨김) */
+
+/* ===================== 테마 (진단 결과 대표 색상) ===================== */
+var THEMES = {
+  C1: {bg:"#fff8f5",accent:"#a84c2a",soft:"#c87050",pale:"#fdeee6",border:"#f0c0a8"},
+  C2: {bg:"#f5f8ff",accent:"#2a52a8",soft:"#5a7aca",pale:"#e0eafc",border:"#b8ccf0"},
+  C3: {bg:"#fffdf0",accent:"#7a6010",soft:"#a88a30",pale:"#fdf8d0",border:"#e8d880"},
+  C4: {bg:"#f3f6fa",accent:"#24486a",soft:"#507090",pale:"#d8e8f4",border:"#a8c8e0"},
+  C5: {bg:"#f0faf8",accent:"#14604a",soft:"#3a9070",pale:"#d0eee8",border:"#80cab8"},
+  C6: {bg:"#fdf5f8",accent:"#882040",soft:"#b05070",pale:"#f4e0e8",border:"#d8a8b8"},
+  C7: {bg:"#f8f4ff",accent:"#503888",soft:"#8060b0",pale:"#ece0fc",border:"#c0a8e8"},
+  C8: {bg:"#f0f7ff",accent:"#1a4e82",soft:"#4078b0",pale:"#d0e8fc",border:"#88b8e8"},
+  C9: {bg:"#f4faf0",accent:"#2e5e14",soft:"#5a8a3a",pale:"#dcefd0",border:"#98c878"},
+  C10:{bg:"#fff8f0",accent:"#7a3e08",soft:"#b06828",pale:"#f8e8d0",border:"#e0b878"},
+  DEFAULT:{bg:"#eef2ea",accent:"#2c4a1f",soft:"#5a7a4a",pale:"#eaf3de",border:"#d8e3d0"}
+};
+
+/* ===================== 제철 데이터 (월 배열) ===================== */
+var SEASONS = {
+  "쑥":[3,4,5], "참나물":[4,5,6], "케일":[1,2,3,4,5,6,7,8,9,10,11,12],
+  "고사리":[4,5], "고구마순":[7,8,9], "시래기":[10,11,12,1,2,3],
+  "비름":[6,7,8], "오가피나물":[5,6], "도라지":[9,10,11],
+  "당귀잎":[4,5,6], "죽순":[4,5,6], "미나리":[3,4,5,10,11],
+  "가죽나물":[4,5], "갯방풍":[4,5,6], "두릅":[4,5]
+};
+function isInSeason(name){
+  var m = new Date().getMonth()+1;
+  var arr = SEASONS[name];
+  return arr ? arr.indexOf(m) !== -1 : false;
+}
+
+/* ===================== 카테고리 ===================== */
+var CATEGORY_META = {
+  C1:{symptom:"피로감·빈혈"}, C2:{symptom:"눈 피로"}, C3:{symptom:"소화 불편"},
+  C4:{symptom:"관절·골밀도"}, C5:{symptom:"기관지 불편"}, C6:{symptom:"혈행 관리"},
+  C7:{symptom:"혈압·혈당 관리"}, C8:{symptom:"붓기"}, C9:{symptom:"체중 관리"}, C10:{symptom:"면역력"}
+};
+
+var QUESTIONS = [
+  {cat:"C1", text:"최근 자주 피곤하거나 어지럽고 손발이 차가운 편인가요?"},
+  {cat:"C2", text:"눈이 쉽게 피로하거나 시력 저하가 느껴지나요?"},
+  {cat:"C3", text:"배변이 원활하지 않거나 속이 더부룩한 편인가요?"},
+  {cat:"C4", text:"무릎이나 관절이 시리고 골밀도가 걱정되나요?"},
+  {cat:"C5", text:"목이 자주 칼칼하거나 기침, 가래가 있나요?"},
+  {cat:"C6", text:"평소 음주를 자주 하는 편인가요?"},
+  {cat:"C7", text:"혈압이나 혈당이 높은 편인가요?"},
+  {cat:"C8", text:"짠 음식을 즐기거나 자주 붓는 편인가요?"},
+  {cat:"C9", text:"체중 관리나 다이어트 중인가요?"},
+  {cat:"C10", text:"감기에 자주 걸리거나 면역력이 약하다고 느끼나요?"}
+];
+
+/* ===================== 상품 데이터 ===================== */
+var PRODUCTS = [
+  {id:"13567688080", shortName:"쑥", cat:"C1", role:"primary",
+   tag:"철분·비타민A",
+   desc:"쑥 특유의 향과 철분이 풍부해 피로감과 빈혈 예방에 도움을 줘요.",
+   recipe:"쑥된장국 또는 쑥버무리"},
+
+  {id:"13540764921", shortName:"참나물", cat:"C2", role:"primary",
+   tag:"비타민A·칼슘",
+   desc:"향긋한 참나물은 비타민A가 풍부해 눈 건강에 도움을 줘요.",
+   recipe:"참나물 무침 또는 참나물 된장국"},
+  {id:"13540619982", shortName:"케일", cat:"C2", role:"alt",
+   tag:"비타민A", bundleNote:"쌈채소 세트에 포함된 상품으로 연결돼요",
+   desc:"케일은 비타민A가 풍부해 눈 건강에 도움을 줘요.",
+   recipe:"케일 쌈 또는 케일 스무디"},
+
+  {id:"13567830613", shortName:"고사리", cat:"C3", role:"primary",
+   tag:"식이섬유",
+   desc:"고사리는 식이섬유가 풍부해 장 건강과 배변에 도움을 줘요.",
+   recipe:"고사리나물 볶음 또는 고사리 비빔밥"},
+  {id:"13459785871", shortName:"고구마순", cat:"C3", role:"alt",
+   tag:"식이섬유",
+   desc:"고구마순도 식이섬유가 풍부해 함께 추천드려요.",
+   recipe:"고구마순 들깨볶음"},
+
+  {id:"13577711712", shortName:"시래기", cat:"C4", role:"primary",
+   tag:"칼슘·식이섬유", bundleNote:"건나물 모음에 포함된 상품으로 연결돼요",
+   desc:"시래기는 칼슘이 풍부해 관절과 뼈 건강에 도움을 줘요.",
+   recipe:"시래기된장국 또는 시래기나물 무침"},
+  {id:"13545958071", shortName:"비름", cat:"C4", role:"alt",
+   tag:"칼슘", bundleNote:"제철나물 모음전에 포함된 상품으로 연결돼요",
+   desc:"비름은 칼슘이 풍부한 나물로 함께 보면 좋아요.",
+   recipe:"비름나물 무침"},
+  {id:"13545709084", shortName:"오가피나물", cat:"C4", role:"alt",
+   tag:"칼슘",
+   desc:"오가피나물은 예로부터 관절 건강에 즐겨 쓰인 나물이에요.",
+   recipe:"오가피순 나물 무침"},
+
+  {id:"13471552325", shortName:"도라지", cat:"C5", role:"primary",
+   tag:"사포닌", bundleNote:"차례나물 상품에 포함된 상품으로 연결돼요",
+   desc:"도라지의 사포닌 성분이 목과 기관지 건강에 도움을 줘요.",
+   recipe:"도라지 생채 또는 도라지오이무침"},
+
+  {id:"13459864964", shortName:"당귀잎", cat:"C6", role:"primary",
+   tag:"혈행 관리",
+   desc:"당귀 특유의 향과 성분이 혈액순환에 도움이 된다고 알려져 있어요.",
+   recipe:"당귀잎 장아찌 또는 쌈으로 섭취"},
+
+  {id:"13540710441", shortName:"죽순", cat:"C7", role:"primary",
+   tag:"칼륨·식이섬유", bundleNote:"샤브샤브 세트에 포함된 상품으로 연결돼요",
+   desc:"죽순은 식이섬유가 풍부해 혈압·혈당 관리에 도움을 줘요.",
+   recipe:"죽순 샤브샤브 또는 죽순 볶음"},
+
+  {id:"13540619982", shortName:"미나리", cat:"C8", role:"primary",
+   tag:"칼륨", bundleNote:"쌈채소 세트에 포함된 상품으로 연결돼요",
+   desc:"미나리는 칼륨이 풍부해 나트륨 배출과 붓기 완화에 도움을 줘요.",
+   recipe:"미나리 초무침 또는 미나리 전"},
+
+  {id:"13452370734", shortName:"가죽나물", cat:"C9", role:"primary",
+   tag:"저칼로리",
+   desc:"향긋한 가죽나물은 칼로리 부담 없이 즐기기 좋아요.",
+   recipe:"가죽나물 된장무침 또는 쌈"},
+
+  {id:"13540791803", shortName:"갯방풍", cat:"C10", role:"primary",
+   tag:"항산화",
+   desc:"갯방풍 특유의 향과 항산화 성분이 면역 관리에 도움을 줘요.",
+   recipe:"갯방풍 무침 또는 갯방풍 튀김"},
+  {id:"13459923329", shortName:"두릅", cat:"C10", role:"alt",
+   tag:"항산화",
+   desc:"두릅순의 쌉쌀한 맛과 항산화 성분도 면역 관리에 좋아요.",
+   recipe:"두릅 초고추장 무침 또는 두릅 튀김"}
+];
+
+var FALLBACK = ["C8","C4"];
+var RECORDS_KEY = "namulbaragi_records_v1";
+var ADMIN_PASSWORD = "99308972";
+
+/* ===================== 저장 ===================== */
+function getRecords(){try{var r=localStorage.getItem(RECORDS_KEY);return r?JSON.parse(r):[]}catch(e){return []}}
+function saveRecord(rec){try{var r=getRecords();r.push(rec);localStorage.setItem(RECORDS_KEY,JSON.stringify(r))}catch(e){}}
+function clearRecords(){try{localStorage.removeItem(RECORDS_KEY)}catch(e){}}
+
+/* ===================== 상태 ===================== */
+var state = {
+  step:"cover", /* cover|quiz|loading|result|history|adminLogin|admin */
+  answers:{}, recorded:false, adminError:"",
+  currentTheme: THEMES.DEFAULT
+};
+
+/* ===================== 렌더 라우터 ===================== */
+var app = document.getElementById("app");
+function render(){
+  if(state.step==="cover") renderCover();
+  else if(state.step==="quiz") renderQuiz();
+  else if(state.step==="loading") renderLoading();
+  else if(state.step==="result") renderResult();
+  else if(state.step==="history") renderHistory();
+  else if(state.step==="adminLogin") renderAdminLogin();
+  else if(state.step==="admin") renderAdmin();
+}
+
+/* ===================== SVG ===================== */
+function leafLogoSVG(size, color){
+  var c = color||"#2c4a1f";
+  return '<svg width="'+size+'" height="'+(size*1.25)+'" viewBox="0 0 100 130" fill="none">'+
+    '<path d="M50,55 C30,50 10,36 15,16 C35,10 50,26 50,55 Z" stroke="'+c+'" stroke-width="5" stroke-linejoin="round"/>'+
+    '<path d="M50,55 C24,48 18,38 18,38" stroke="'+c+'" stroke-width="3.5" stroke-linecap="round"/>'+
+    '<path d="M50,55 C70,50 90,36 85,16 C65,10 50,26 50,55 Z" stroke="'+c+'" stroke-width="5" stroke-linejoin="round"/>'+
+    '<path d="M50,55 C76,48 82,38 82,38" stroke="'+c+'" stroke-width="3.5" stroke-linecap="round"/>'+
+    '<path d="M50,55 C45,70 40,86 45,100 C48,110 42,118 48,128" stroke="'+c+'" stroke-width="5" stroke-linecap="round"/>'+
+    '<path d="M48,96 C48,90 55,87 59,92 C63,87 70,90 70,96 C70,104 59,112 59,112 C59,112 48,104 48,96 Z" fill="'+c+'"/>'+
+    '</svg>';
+}
+function leafIconSmall(color){
+  var c=color||"#2c4a1f";
+  return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="'+c+'" stroke-width="1.8"><path d="M4 14c0-6 4-10 10-10 1 6-3 10-10 10z"/><path d="M4 14c4-1 7-4 9-9"/></svg>';
+}
+
+/* ===================== 테마 적용 ===================== */
+function applyTheme(t){
+  var r=document.documentElement.style;
+  r.setProperty("--theme-bg",t.bg);
+  r.setProperty("--theme-accent",t.accent);
+  r.setProperty("--theme-soft",t.soft);
+  r.setProperty("--theme-pale",t.pale);
+  r.setProperty("--theme-border",t.border);
+}
+
+/* ===================== 표지 ===================== */
+function renderCover(){
+  applyTheme(THEMES.DEFAULT);
+  var hasHistory = getRecords().length > 0;
+  app.innerHTML =
+    '<div class="cover-wrap">'+
+      leafLogoSVG(64)+
+      '<div>'+
+        '<div class="logo-small">나물바라기</div>'+
+        '<h1 class="cover-title">지금 바로<br>필요한 나물 처방전</h1>'+
+        '<p class="cover-sub">10가지 질문으로 내 몸에 맞는 나물을 찾아드려요</p>'+
+      '</div>'+
+      '<button class="btn-start" id="startBtn">문진 시작하기</button>'+
+      (hasHistory?'<button class="btn-history" id="historyBtn">📋 내 처방 기록 보기</button>':'')+
+      '<button class="admin-link" id="adminLinkBtn">관리자</button>'+
+    '</div>';
+  document.getElementById("startBtn").onclick = function(){
+    state.step="quiz"; state.answers={}; state.recorded=false; render();
+  };
+  if(hasHistory) document.getElementById("historyBtn").onclick = function(){
+    state.step="history"; render();
+  };
+  document.getElementById("adminLinkBtn").onclick = function(){
+    state.adminError=""; state.step="adminLogin"; render();
+  };
+}
+
+/* ===================== 문진 ===================== */
+function renderQuiz(){
+  var blocks = QUESTIONS.map(function(q,i){
+    var cur=state.answers[q.cat];
+    var ya=cur===true?" active":""; var na=cur===false?" active":"";
+    return '<div class="q-block" data-cat="'+q.cat+'">'+
+      '<p class="q-num">Q'+(i+1)+'</p>'+
+      '<p class="q-text">'+q.text+'</p>'+
+      '<div class="q-options">'+
+        '<button class="opt-btn'+ya+'" data-val="yes">예, 그런 편이에요</button>'+
+        '<button class="opt-btn'+na+'" data-val="no">아니요, 별로 안 그래요</button>'+
+      '</div></div>';
+  }).join("");
+  app.innerHTML =
+    '<p class="quiz-intro">10개 문항 모두에 답해주시면 처방전을 만들어드려요.</p>'+
+    '<div class="quiz-list" id="quizList">'+blocks+'</div>'+
+    '<div class="submit-bar"><div class="submit-bar-inner">'+
+      '<span class="submit-count" id="submitCount">0 / 10개 답변</span>'+
+      '<button class="submit-btn" id="submitBtn" disabled>처방전 받기</button>'+
+    '</div></div>';
+  var qList=document.getElementById("quizList");
+  var submitBtn=document.getElementById("submitBtn");
+  var submitCount=document.getElementById("submitCount");
+  function updateBar(){
+    var n=Object.keys(state.answers).length;
+    submitCount.textContent=n+" / 10개 답변";
+    submitBtn.disabled=n<QUESTIONS.length;
+  }
+  qList.addEventListener("click",function(e){
+    var btn=e.target.closest(".opt-btn"); if(!btn) return;
+    var block=btn.closest(".q-block");
+    var cat=block.getAttribute("data-cat");
+    state.answers[cat]=(btn.getAttribute("data-val")==="yes");
+    block.querySelectorAll(".opt-btn").forEach(function(o){o.classList.toggle("active",o===btn);});
+    updateBar();
+  });
+  submitBtn.onclick=function(){
+    if(Object.keys(state.answers).length<QUESTIONS.length) return;
+    state.step="loading"; render();
+    setTimeout(function(){ state.step="result"; render(); },1200);
+  };
+  updateBar();
+}
+
+/* ===================== 로딩 ===================== */
+function renderLoading(){
+  app.innerHTML='<div class="loading-wrap">'+
+    '<div class="spinner" role="status"></div>'+
+    '<p class="loading-text">나물 처방전을 만드는 중입니다…</p>'+
+  '</div>';
+}
+
+/* ===================== 결과 ===================== */
+function findProducts(cat,role){
+  return PRODUCTS.filter(function(p){return p.cat===cat&&p.role===role;});
+}
+function getNeededCats(){
+  return QUESTIONS.map(function(q){return q.cat;}).filter(function(c){return state.answers[c];});
+}
+
+function renderResult(){
+  var neededCats=getNeededCats();
+  var usedFallback=false;
+  if(neededCats.length===0){neededCats=FALLBACK;usedFallback=true;}
+
+  /* 테마: 첫 번째 카테고리 기준 */
+  var theme=THEMES[neededCats[0]]||THEMES.DEFAULT;
+  state.currentTheme=theme;
+  applyTheme(theme);
+
+  var summaryText=usedFallback
+    ? "특별히 불편한 증상은 없으셨네요. 제철 나물로 꾸준히 건강을 관리해보세요."
+    : neededCats.map(function(c){return CATEGORY_META[c].symptom;}).join(" · ");
+
+  var itemsHTML="";
+  var recommendedShortNames=[];
+  var seasonalFound=[];
+  for(var i=0;i<neededCats.length;i++){
+    var cat=neededCats[i];
+    var primaries=findProducts(cat,"primary");
+    var alts=findProducts(cat,"alt");
+    primaries.forEach(function(prod){
+      recommendedShortNames.push(prod.shortName);
+      var inSeason=isInSeason(prod.shortName);
+      if(inSeason) seasonalFound.push(prod.shortName);
+      var link=STORE_BASE+prod.id;
+      var altText=alts.length>0?('<p class="alt-line">함께 보면 좋아요: '+alts.map(function(a){return a.shortName;}).join(", ")+'</p>'):"";
+      var bundleText=prod.bundleNote?('<p class="bundle-note">'+prod.bundleNote+'</p>'):"";
+      var recipeText=prod.recipe?('<p class="item-recipe">💡 '+prod.recipe+'</p>'):"";
+      var seasonBadge=inSeason?'<span class="season-pill">🌿 이달의 제철</span>':"";
+      itemsHTML+='<div class="item">'+
+        '<div class="leaf-ico">'+leafIconSmall(theme.accent)+'</div>'+
+        '<div class="item-body">'+
+          '<div class="item-name-row">'+
+            '<span class="item-name">'+prod.shortName+'</span>'+
+            '<span class="tag-pill">'+prod.tag+'</span>'+
+            seasonBadge+
+          '</div>'+
+          '<p class="item-desc">'+prod.desc+'</p>'+
+          recipeText+
+          bundleText+
+          altText+
+        '</div>'+
+        '<a class="buy-btn" href="'+link+'" target="_blank" rel="noopener">구매하기</a>'+
+      '</div>';
+    });
+  }
+
+  if(!state.recorded){
+    saveRecord({
+      date:new Date().toISOString(),
+      cats:usedFallback?[]:neededCats.slice(),
+      fallback:usedFallback,
+      recommended:recommendedShortNames.slice(),
+      summary:summaryText
+    });
+    state.recorded=true;
+  }
+
+  var today=new Date();
+  var dateStr=today.getFullYear()+"."+String(today.getMonth()+1).padStart(2,"0")+"."+String(today.getDate()).padStart(2,"0");
+  var shareText="나의 나물 처방전은 "+recommendedShortNames.join(", ")+" 입니다.";
+  var themeBadgeHTML=(!usedFallback&&neededCats[0]&&THEMES[neededCats[0]])
+    ?'<div class="rx-theme-badge">'+CATEGORY_META[neededCats[0]].symptom+' 케어 처방전</div>'
+    :'';
+  var kakaoBtn=(KAKAO_APP_KEY&&typeof Kakao!=="undefined"&&Kakao.isInitialized())
+    ?'<button class="action-btn action-kakao" id="kakaoBtn">카카오톡으로 공유</button>':"";
+
+  app.innerHTML=
+    '<div class="rx-wrap" id="rxWrap">'+
+    '<div class="rx-card" id="rxCard">'+
+      '<div class="rx-header">'+
+        '<div>'+leafLogoSVG(32,theme.accent)+
+          '<p class="rx-title">나물 처방전</p>'+
+          '<p class="rx-date">처방일자 '+dateStr+'</p>'+
+        '</div>'+
+        '<div class="stamp"><span>처방<br>완료</span></div>'+
+      '</div>'+
+      themeBadgeHTML+
+      '<p class="rx-summary-label">주요 증상 요약</p>'+
+      '<p class="rx-summary-text">'+summaryText+'</p>'+
+      itemsHTML+
+      '<p class="disclaimer">이 처방전은 일반적으로 알려진 식품 영양정보를 바탕으로 한 단순 참고용 추천이며, 의학적 진단이나 처방이 아닙니다. 정확한 건강 상태는 전문가와 상담해주세요.</p>'+
+      '<div class="rx-actions">'+
+        '<button class="action-btn action-primary" id="saveImgBtn">처방전 저장 (이미지로)</button>'+
+        '<div class="rx-actions-row">'+
+          (kakaoBtn||'')+'<button class="action-btn action-secondary" id="shareBtn">링크 공유</button>'+
+        '</div>'+
+        '<button class="action-btn action-secondary" id="restartBtn">다시 진단하기</button>'+
+      '</div>'+
+    '</div></div>';
+
+  var rxCard=document.getElementById("rxCard");
+
+  /* 이미지 저장 */
+  document.getElementById("saveImgBtn").onclick=async function(){
+    if(typeof html2canvas!=="function"){alert("이미지 저장 기능을 불러오지 못했어요. 인터넷 연결을 확인해주세요.");return;}
+    rxCard.classList.add("capturing");
+    try{
+      var canvas=await html2canvas(rxCard,{backgroundColor:"#ffffff",scale:2});
+      var a=document.createElement("a");
+      a.download="나물처방전_"+dateStr.replace(/\./g,"")+".png";
+      a.href=canvas.toDataURL("image/png");
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }catch(err){alert("이미지 저장에 실패했어요. 다시 시도해주세요.");}
+    finally{rxCard.classList.remove("capturing");}
+  };
+
+  /* 카카오 공유 */
+  if(kakaoBtn){
+    document.getElementById("kakaoBtn").onclick=function(){
+      Kakao.Share.sendDefault({
+        objectType:"text",
+        text:shareText,
+        link:{mobileWebUrl:SITE_URL,webUrl:SITE_URL}
+      });
+    };
+  }
+
+  /* 링크 공유 */
+  document.getElementById("shareBtn").onclick=function(){
+    var combined=shareText+"\n"+SITE_URL;
+    if(navigator.share){navigator.share({text:shareText,url:SITE_URL}).catch(function(){});}
+    else if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(combined).then(function(){alert("아래 문구가 복사되었어요.\n\n"+combined);}).catch(function(){alert(combined);});
+    }else{alert(combined);}
+  };
+
+  /* 다시 진단하기 */
+  document.getElementById("restartBtn").onclick=function(){
+    applyTheme(THEMES.DEFAULT);
+    state.step="cover"; state.answers={}; state.recorded=false; render();
+  };
+}
+
+/* ===================== 히스토리 ===================== */
+function renderHistory(){
+  var recs=getRecords().slice().reverse().slice(0,5);
+  var histHTML=recs.length===0
+    ? '<p class="hist-empty">아직 저장된 처방 기록이 없어요.</p>'
+    : recs.map(function(r){
+        var d=new Date(r.date);
+        var dStr=d.getFullYear()+"."+String(d.getMonth()+1).padStart(2,"0")+"."+String(d.getDate()).padStart(2,"0");
+        var cats=r.fallback?"증상 없음":((r.cats||[]).map(function(c){return CATEGORY_META[c]&&CATEGORY_META[c].symptom;}).filter(Boolean).join(" · ")||"—");
+        var namul=(r.recommended||[]).join(", ")||"—";
+        return '<div class="hist-item">'+
+          '<p class="hist-date">'+dStr+'</p>'+
+          '<p class="hist-cats">증상: '+cats+'</p>'+
+          '<p class="hist-namul">추천: '+namul+'</p>'+
+        '</div>';
+      }).join("");
+  app.innerHTML=
+    '<div class="card">'+
+      '<p class="history-title">내 처방 기록</p>'+
+      '<p class="history-sub">최근 5회 기록 · 이 기기의 브라우저에만 저장돼요</p>'+
+      histHTML+
+      '<button class="action-btn action-primary" id="closeHistBtn" style="margin-top:16px;">닫기</button>'+
+    '</div>';
+  document.getElementById("closeHistBtn").onclick=function(){state.step="cover";render();};
+}
+
+/* ===================== 관리자 로그인 ===================== */
+function renderAdminLogin(){
+  app.innerHTML=
+    '<div class="card">'+
+      '<p class="admin-title">관리자 모드</p>'+
+      '<p class="admin-sub">비밀번호를 입력해주세요.</p>'+
+      (state.adminError?'<p class="admin-error">'+state.adminError+'</p>':"")+
+      '<input type="password" class="admin-pass-input" id="passInput" placeholder="비밀번호">'+
+      '<button class="action-btn action-primary" id="passSubmit">확인</button>'+
+      '<button class="admin-cancel" id="passCancel">취소하고 돌아가기</button>'+
+    '</div>';
+  document.getElementById("passSubmit").onclick=function(){
+    var v=document.getElementById("passInput").value;
+    if(v===ADMIN_PASSWORD){state.adminError="";state.step="admin";}
+    else state.adminError="비밀번호가 올바르지 않아요.";
+    render();
+  };
+  document.getElementById("passCancel").onclick=function(){state.step="cover";render();};
+}
+
+/* ===================== 관리자 통계 ===================== */
+function topList(obj,limit){
+  return Object.keys(obj).map(function(k){return{key:k,count:obj[k]};}).sort(function(a,b){return b.count-a.count;}).slice(0,limit);
+}
+function computeStats(){
+  var recs=getRecords(); var catCount={}; var nameCount={};
+  recs.forEach(function(r){
+    (r.cats||[]).forEach(function(c){catCount[c]=(catCount[c]||0)+1;});
+    (r.recommended||[]).forEach(function(n){nameCount[n]=(nameCount[n]||0)+1;});
+  });
+  return{total:recs.length,topCats:topList(catCount,5),topNames:topList(nameCount,5)};
+}
+function renderAdmin(){
+  var stats=computeStats();
+  var catRows=stats.topCats.length>0
+    ? stats.topCats.map(function(c,i){return '<div class="stat-row"><span><span class="stat-rank">'+(i+1)+'</span>'+CATEGORY_META[c.key].symptom+'</span><span>'+c.count+'건</span></div>';}).join("")
+    : '<p class="stat-empty">아직 쌓인 기록이 없어요.</p>';
+  var nameRows=stats.topNames.length>0
+    ? stats.topNames.map(function(n,i){return '<div class="stat-row"><span><span class="stat-rank">'+(i+1)+'</span>'+n.key+'</span><span>'+n.count+'회</span></div>';}).join("")
+    : '<p class="stat-empty">아직 쌓인 기록이 없어요.</p>';
+  app.innerHTML=
+    '<div class="card">'+
+      '<p class="admin-title">관리자 모드</p>'+
+      '<p class="admin-sub">이 브라우저에 저장된 진단 기록 기준입니다 (총 '+stats.total+'건).</p>'+
+      '<div class="stat-block"><h3>가장 많이 나온 증상</h3>'+catRows+'</div>'+
+      '<div class="stat-block"><h3>가장 많이 추천된 나물</h3>'+nameRows+'</div>'+
+      '<div class="admin-actions">'+
+        '<button class="action-btn action-secondary" id="clearBtn">기록 초기화</button>'+
+        '<button class="action-btn action-primary" id="closeBtn">닫기</button>'+
+      '</div>'+
+    '</div>';
+  document.getElementById("clearBtn").onclick=function(){
+    if(confirm("저장된 진단 기록을 모두 삭제할까요?")){clearRecords();render();}
+  };
+  document.getElementById("closeBtn").onclick=function(){state.step="cover";render();};
+}
+
+/* ===================== 카카오 SDK 초기화 ===================== */
+if(KAKAO_APP_KEY&&typeof Kakao!=="undefined"){
+  try{ Kakao.init(KAKAO_APP_KEY); }catch(e){}
+}
+
+render();
+</script>
+</body>
+</html>
