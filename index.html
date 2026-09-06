@@ -428,7 +428,8 @@ function renderQuiz(){
       '</div></div>';
   }).join("");
   app.innerHTML=
-    '<p class="quiz-intro">10개 문항 모두에 답해주시면 처방전을 만들어드려요.</p>'+
+    '<p class="q-num" style="margin-bottom:6px;">1단계 · 증상 확인</p>'+
+    '<p class="quiz-intro">10개 문항 모두에 답하시면 다음 단계로 넘어가요.</p>'+
     '<div class="quiz-list" id="quizList">'+blocks+'</div>'+
     '<div class="submit-bar"><div class="submit-bar-inner">'+
       '<span class="submit-count" id="submitCount">0 / 10개 답변</span>'+
@@ -468,8 +469,7 @@ function renderQuiz(){
 
   submitBtn.onclick=function(){
     if(Object.keys(state.answers).length<QUESTIONS.length) return;
-    state.step="loading";render();
-    setTimeout(function(){state.step="result";render();},1200);
+    state.step="dietQuiz"; render();
   };
   updateBar();
 }
@@ -606,7 +606,7 @@ function renderResult(){
       '<p class="rx-summary-text">'+summaryText+'</p>'+
       itemsHTML+
       pairingHTML+
-      (state.dietDone ? buildDietBox() : '')+
+      buildDietBox()+
       '<p class="disclaimer">이 처방전은 일반적으로 알려진 식품 영양정보를 바탕으로 한 단순 참고용 추천이며, 의학적 진단이나 처방이 아닙니다. 정확한 건강 상태는 전문가와 상담해주세요.</p>'+
       '<div class="rx-actions">'+
         '<div class="rx-actions-row">'+
@@ -616,7 +616,6 @@ function renderResult(){
         '<div class="rx-actions-row">'+
           (kakaoBtn||'')+'<button class="action-btn action-secondary" id="shareBtn">링크 공유</button>'+
         '</div>'+
-        (!state.dietDone ? '<button class="diet-trigger" id="dietTriggerBtn">🥗 식습관 & 선호도 분석 추가하기</button>' : '')+
         '<button class="action-btn action-secondary" id="restartBtn">다시 진단하기</button>'+
       '</div>'+
     '</div></div>';
@@ -683,15 +682,11 @@ function renderResult(){
     }else{alert(combined);}
   };
 
-  /* 식습관 분석 트리거 */
-  var dietTrigger=document.getElementById("dietTriggerBtn");
-  if(dietTrigger) dietTrigger.onclick=function(){state.step="dietQuiz";render();};
-
   /* 다시 진단하기 */
   document.getElementById("restartBtn").onclick=function(){
     applyTheme(THEMES.DEFAULT);state.step="cover";state.answers={};state.recorded=false;state.dietAnswers={};state.dietDone=false;render();
   };
-  /* 식습관 다시 분석하기 */
+  /* 식습관 다시 답변하기 */
   var dietRedoBtn=document.getElementById("dietRedoBtn");
   if(dietRedoBtn) dietRedoBtn.onclick=function(){state.dietAnswers={};state.dietDone=false;state.step="dietQuiz";render();};
 }
@@ -813,7 +808,7 @@ function buildDietBox(){
   return '<div class="diet-box">'+
     '<p class="diet-box-title">🥗 식습관 & 선호도 분석</p>'+
     rows+
-    '<button class="diet-redo" id="dietRedoBtn">다시 분석하기</button>'+
+    '<button class="diet-redo" id="dietRedoBtn">식습관 다시 답변하기</button>'+
   '</div>';
 }
 
@@ -834,7 +829,8 @@ function renderDietQuiz(){
   }).join("");
 
   app.innerHTML=
-    '<button class="diet-back" id="dietBackBtn">← 처방전으로 돌아가기</button>'+
+    '<p class="q-num" style="margin-bottom:6px;">2단계 · 식습관 & 선호도</p>'+
+    '<button class="diet-back" id="dietBackBtn">← 증상 문진으로 돌아가기</button>'+
     '<div class="diet-quiz-wrap" id="dietList">'+blocks+'</div>'+
     '<div class="submit-bar"><div class="submit-bar-inner">'+
       '<span class="submit-count" id="dietCount">0 / 5개 답변</span>'+
@@ -873,22 +869,18 @@ function renderDietQuiz(){
   });
 
   document.getElementById("dietBackBtn").onclick=function(){
-    state.step="result"; render();
+    state.step="quiz"; render();
     setTimeout(function(){
-      var box=document.getElementById("rxCard");
-      if(box) box.scrollIntoView({behavior:"smooth",block:"start"});
+      var bar=document.querySelector(".submit-bar");
+      if(bar) bar.scrollIntoView({behavior:"smooth",block:"end"});
     },100);
   };
 
   dietSubmitBtn.onclick=function(){
     if(Object.keys(state.dietAnswers).length<DIET_QUESTIONS.length) return;
     state.dietDone=true;
-    state.step="result";
-    render();
-    setTimeout(function(){
-      var box=document.querySelector(".diet-box");
-      if(box) box.scrollIntoView({behavior:"smooth",block:"center"});
-    },100);
+    state.step="loading"; render();
+    setTimeout(function(){state.step="result"; render();},1200);
   };
 
   updateDietBar();
