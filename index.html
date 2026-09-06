@@ -155,6 +155,23 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;}
 .insta-symptom{font-size:16px;color:var(--theme-soft);margin:0 0 30px;}
 .insta-url{font-size:14px;color:var(--theme-accent);opacity:.7;margin:0;}
 
+
+/* 식습관 분석 */
+.diet-trigger{width:100%;margin-top:14px;padding:14px;border-radius:10px;border:1.5px dashed var(--theme-accent);background:transparent;color:var(--theme-accent);font-size:14px;font-weight:600;cursor:pointer;}
+.diet-box{margin-top:20px;padding:18px;border-radius:14px;border:1.5px solid var(--theme-accent);background:var(--theme-pale);}
+.diet-box-title{font-size:14px;font-weight:700;color:var(--theme-accent);margin:0 0 14px;display:flex;align-items:center;gap:6px;}
+.diet-comment{display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;font-size:14px;color:var(--theme-soft);line-height:1.55;}
+.diet-comment:last-child{margin-bottom:0;}
+.diet-dot{flex-shrink:0;width:6px;height:6px;border-radius:50%;background:var(--theme-accent);margin-top:8px;}
+.diet-redo{font-size:12px;color:var(--theme-soft);text-decoration:underline;margin-top:12px;display:block;}
+
+/* 식습관 문진 */
+.diet-quiz-wrap{padding-bottom:110px;}
+.diet-q-block{background:var(--paper);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px;}
+.diet-opts{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+.diet-opt{text-align:left;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:#fff;font-size:15px;color:#333;}
+.diet-opt.active{background:var(--green-mid);color:#fff;border-color:var(--green-mid);font-weight:700;}
+.diet-back{font-size:13px;color:var(--green-soft);text-decoration:underline;display:inline-block;margin-bottom:16px;}
 @media print{.rx-actions{display:none;}}
 </style>
 </head>
@@ -288,6 +305,48 @@ var PRODUCTS=[
   {id:"13540791803",shortName:"갯방풍",   cat:"C10",role:"primary",tag:"항산화",      desc:"갯방풍 특유의 향과 항산화 성분이 면역 관리에 도움을 줘요.",    recipe:"갯방풍 무침 또는 갯방풍 튀김"},
 
 ];
+
+/* ===================== 식습관 질문 ===================== */
+var DIET_QUESTIONS=[
+  {key:"freq",  text:"평소 나물·채소를 얼마나 자주 드세요?",
+   opts:["거의 매일","주 2~3회","가끔"]},
+  {key:"taste", text:"어떤 맛을 선호하세요?",
+   opts:["담백하고 순한 맛","짭짤하고 감칠맛","향이 강한 맛"]},
+  {key:"cook",  text:"선호하는 조리법은?",
+   opts:["무침·생채","볶음·구이","국·찌개","쌈·샐러드"]},
+  {key:"bold",  text:"향이 강한 나물(쑥·갯방풍·당귀)을 즐기시나요?",
+   opts:["예, 좋아해요","아니요, 순한 게 좋아요"]},
+  {key:"meal",  text:"식사가 불규칙하거나 한 끼를 자주 거르시나요?",
+   opts:["자주 그래요","아니요, 규칙적이에요"]}
+];
+
+/* 식습관 답변 → 코멘트 매핑 */
+var DIET_COMMENTS={
+  freq:{
+    "거의 매일":    "채소 섭취 습관이 훌륭해요! 지금처럼 꾸준히 유지해보세요.",
+    "주 2~3회":    "처방받은 나물 한 가지씩 식탁에 더해보세요.",
+    "가끔":         "부담 없이 처방받은 나물부터 조금씩 시작해보세요."
+  },
+  taste:{
+    "담백하고 순한 맛":  "담백한 무침나물이나 쌈채소가 잘 맞을 거예요.",
+    "짭짤하고 감칠맛":   "된장 무침이나 들기름 볶음으로 즐겨보세요.",
+    "향이 강한 맛":      "쑥·갯방풍·참나물처럼 향 진한 나물이 딱 맞아요."
+  },
+  cook:{
+    "무침·생채":   "영양소 손실이 적어 가장 효과적인 조리법이에요.",
+    "볶음·구이":   "들기름 볶음으로 지용성 영양소 흡수율을 높여요.",
+    "국·찌개":     "국물까지 드시면 수용성 영양소를 빠짐없이 섭취해요.",
+    "쌈·샐러드":   "열에 약한 비타민C를 그대로 지킬 수 있는 방법이에요."
+  },
+  bold:{
+    "예, 좋아해요":        "쑥·갯방풍·당귀잎의 독특한 향도 마음껏 즐겨보세요.",
+    "아니요, 순한 게 좋아요":"고사리·참나물처럼 순한 나물부터 친해져보세요."
+  },
+  meal:{
+    "자주 그래요":      "보관이 편한 건나물을 상비해두면 빠진 끼니를 든든하게 채울 수 있어요.",
+    "아니요, 규칙적이에요":"규칙적인 식사에 나물을 더하면 건강 효과가 배가돼요."
+  }
+};
 var FALLBACK=["C8","C4"];
 
 /* ===================== 저장 ===================== */
@@ -298,7 +357,7 @@ function saveRecord(r){try{var a=getRecords();a.push(r);localStorage.setItem(REC
 function clearRecords(){try{localStorage.removeItem(RECORDS_KEY);}catch(e){}}
 
 /* ===================== 상태 ===================== */
-var state={step:"cover",answers:{},recorded:false,adminError:"",currentTheme:THEMES.DEFAULT,lastNames:[]};
+var state={step:"cover",answers:{},recorded:false,adminError:"",currentTheme:THEMES.DEFAULT,lastNames:[],dietAnswers:{},dietDone:false};
 var app=document.getElementById("app");
 
 function render(){
@@ -307,6 +366,7 @@ function render(){
   else if(state.step==="loading")renderLoading();
   else if(state.step==="result") renderResult();
   else if(state.step==="history")renderHistory();
+  else if(state.step==="dietQuiz") renderDietQuiz();
   else if(state.step==="adminLogin")renderAdminLogin();
   else if(state.step==="admin")  renderAdmin();
 }
@@ -546,6 +606,7 @@ function renderResult(){
       '<p class="rx-summary-text">'+summaryText+'</p>'+
       itemsHTML+
       pairingHTML+
+      (state.dietDone ? buildDietBox() : '')+
       '<p class="disclaimer">이 처방전은 일반적으로 알려진 식품 영양정보를 바탕으로 한 단순 참고용 추천이며, 의학적 진단이나 처방이 아닙니다. 정확한 건강 상태는 전문가와 상담해주세요.</p>'+
       '<div class="rx-actions">'+
         '<div class="rx-actions-row">'+
@@ -555,6 +616,7 @@ function renderResult(){
         '<div class="rx-actions-row">'+
           (kakaoBtn||'')+'<button class="action-btn action-secondary" id="shareBtn">링크 공유</button>'+
         '</div>'+
+        (!state.dietDone ? '<button class="diet-trigger" id="dietTriggerBtn">🥗 식습관 & 선호도 분석 추가하기</button>' : '')+
         '<button class="action-btn action-secondary" id="restartBtn">다시 진단하기</button>'+
       '</div>'+
     '</div></div>';
@@ -621,10 +683,17 @@ function renderResult(){
     }else{alert(combined);}
   };
 
+  /* 식습관 분석 트리거 */
+  var dietTrigger=document.getElementById("dietTriggerBtn");
+  if(dietTrigger) dietTrigger.onclick=function(){state.step="dietQuiz";render();};
+
   /* 다시 진단하기 */
   document.getElementById("restartBtn").onclick=function(){
-    applyTheme(THEMES.DEFAULT);state.step="cover";state.answers={};state.recorded=false;render();
+    applyTheme(THEMES.DEFAULT);state.step="cover";state.answers={};state.recorded=false;state.dietAnswers={};state.dietDone=false;render();
   };
+  /* 식습관 다시 분석하기 */
+  var dietRedoBtn=document.getElementById("dietRedoBtn");
+  if(dietRedoBtn) dietRedoBtn.onclick=function(){state.dietAnswers={};state.dietDone=false;state.step="dietQuiz";render();};
 }
 
 /* ===================== 히스토리 + 비교 ===================== */
@@ -728,6 +797,101 @@ function renderAdmin(){
     if(confirm("저장된 진단 기록을 모두 삭제할까요?")){clearRecords();render();}
   };
   document.getElementById("closeBtn").onclick=function(){state.step="cover";render();};
+}
+
+
+/* ===================== 식습관 분석 박스 ===================== */
+function buildDietBox(){
+  var comments=[];
+  Object.keys(DIET_COMMENTS).forEach(function(key){
+    var val=state.dietAnswers[key];
+    if(val && DIET_COMMENTS[key][val]) comments.push(DIET_COMMENTS[key][val]);
+  });
+  var rows=comments.map(function(c){
+    return '<div class="diet-comment"><span class="diet-dot"></span><span>'+c+'</span></div>';
+  }).join("");
+  return '<div class="diet-box">'+
+    '<p class="diet-box-title">🥗 식습관 & 선호도 분석</p>'+
+    rows+
+    '<button class="diet-redo" id="dietRedoBtn">다시 분석하기</button>'+
+  '</div>';
+}
+
+/* ===================== 식습관 문진 ===================== */
+function renderDietQuiz(){
+  var blocks=DIET_QUESTIONS.map(function(q,i){
+    var cur=state.dietAnswers[q.key];
+    var optsHTML=q.opts.map(function(o){
+      var active=(cur===o)?" active":"";
+      return '<button class="diet-opt'+active+'" data-key="'+q.key+'" data-val="'+o+'">'+o+'</button>';
+    }).join("");
+    var answered=(cur!==undefined)?" answered":"";
+    return '<div class="diet-q-block'+answered+'" id="dqb'+i+'">'+
+      '<p class="q-num">Q'+(i+1)+'</p>'+
+      '<p class="q-text">'+q.text+'</p>'+
+      '<div class="diet-opts">'+optsHTML+'</div>'+
+    '</div>';
+  }).join("");
+
+  app.innerHTML=
+    '<button class="diet-back" id="dietBackBtn">← 처방전으로 돌아가기</button>'+
+    '<div class="diet-quiz-wrap" id="dietList">'+blocks+'</div>'+
+    '<div class="submit-bar"><div class="submit-bar-inner">'+
+      '<span class="submit-count" id="dietCount">0 / 5개 답변</span>'+
+      '<button class="submit-btn" id="dietSubmitBtn" disabled>분석 완료</button>'+
+    '</div></div>';
+
+  var dietList=document.getElementById("dietList");
+  var dietSubmitBtn=document.getElementById("dietSubmitBtn");
+  var dietCount=document.getElementById("dietCount");
+
+  function updateDietBar(){
+    var n=Object.keys(state.dietAnswers).length;
+    dietCount.textContent=n+" / 5개 답변";
+    dietSubmitBtn.disabled=n<DIET_QUESTIONS.length;
+  }
+
+  dietList.addEventListener("click",function(e){
+    var btn=e.target.closest(".diet-opt"); if(!btn) return;
+    var key=btn.getAttribute("data-key");
+    var val=btn.getAttribute("data-val");
+    var isNew=state.dietAnswers[key]===undefined;
+    state.dietAnswers[key]=val;
+    var block=btn.closest(".diet-q-block");
+    block.querySelectorAll(".diet-opt").forEach(function(o){o.classList.toggle("active",o===btn);});
+    block.classList.add("answered");
+    updateDietBar();
+    if(isNew){
+      var allBlocks=Array.from(dietList.querySelectorAll(".diet-q-block"));
+      var idx=allBlocks.indexOf(block);
+      if(idx<allBlocks.length-1){
+        setTimeout(function(){
+          allBlocks[idx+1].scrollIntoView({behavior:"smooth",block:"center"});
+        },150);
+      }
+    }
+  });
+
+  document.getElementById("dietBackBtn").onclick=function(){
+    state.step="result"; render();
+    setTimeout(function(){
+      var box=document.getElementById("rxCard");
+      if(box) box.scrollIntoView({behavior:"smooth",block:"start"});
+    },100);
+  };
+
+  dietSubmitBtn.onclick=function(){
+    if(Object.keys(state.dietAnswers).length<DIET_QUESTIONS.length) return;
+    state.dietDone=true;
+    state.step="result";
+    render();
+    setTimeout(function(){
+      var box=document.querySelector(".diet-box");
+      if(box) box.scrollIntoView({behavior:"smooth",block:"center"});
+    },100);
+  };
+
+  updateDietBar();
 }
 
 if(KAKAO_APP_KEY&&typeof Kakao!=="undefined"){try{Kakao.init(KAKAO_APP_KEY);}catch(e){}}
